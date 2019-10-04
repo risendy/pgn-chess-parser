@@ -5,8 +5,11 @@ use PgnParser\Game;
 
 require '../vendor/autoload.php';
 
-$game = new Game();
-$game->parsePgn();
+//$game = new Game();
+//$game->parsePgn();
+
+//var_dump($game->getObjectMovesArray());
 
 //var_dump($game->getMove(5, 'B'));
-var_dump($game->getLastMove('B'));
+//var_dump($game->getLastMove('B'));
+//var_dump($game->getTagValueByName('Time'));

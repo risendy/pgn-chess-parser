@@ -1,5 +1,5 @@
 {
-    "name": "kuba/pgn-parser",
+    "name": "risendy/pgn-parser",
     "description": "PGN chess notation parser",
     "type": "library",
     "license": "MIT",
@@ -14,7 +14,5 @@
             "PgnParser\\":"src/"
         }
     },
-    "require": {
-
-    }
+    "require": {}
 }

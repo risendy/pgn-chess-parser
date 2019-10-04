@@ -3,6 +3,7 @@ namespace PgnParser;
 
 
 use PgnParser\Move;
+use PgnParser\Tag;
 
 class Game {
 	const TAGS = ['Event', 'Site', 'Date', 'Round', 'White', 'Black', 'Result', 'Annotator', 'PlyCount', 'TimeControl', 'Time', 'Termination', 'Mode', 'FEN'];
@@ -35,6 +36,8 @@ class Game {
 		1. e4 e6 2. d4 d5 0-1';
 
 	const HEADER_REGEX = '/^(\[((?:\r?\n)|.)*\])(?:\r?\n){2}/';
+	const HEADER_KEY_REGEX = '/^\[([A-Z][A-Za-z]*)\s.*\]$/';
+	const HEADER_VALUE_REGEX = '/^\[[A-Za-z]+\s"(.*)"\]$/';
 	const COMMENTS_REGEX = '/(\{[^}]+\})+?/';
 	const MOVE_VARIATIONS_REGEX = '/(\([^\(\)]+\))+?/';
 	const MOVE_NUMBER_REGEX = '/\d+\.(\.\.)?/';
@@ -42,34 +45,14 @@ class Game {
 	const ANNOTATION_GLYPHS_REGEX = '/\$\d+/';
 	const MULTIPLE_SPACES_REGEX = '/\s+/';
 
-	function __construct()
-    {
-
-    }
-
-    private $event;
-    private $site;
-    private $round;
-    private $white;
-    private $black;
-    private $result;
-    private $annotator;
-    private $plyCount;
-    private $timeControl;
-    private $time;
-    private $termination;
-    private $mode;
-    private $fen;
-    private $tagsStr = '';
-    private $moveStr = '';
 	private $stringMovesArray = [];
 	private $objectMovesArray = []; 
-	private $tags = [];
+	private $objectTagsArray = [];
 
 	private function extractTagsRegex($pgn) {
 		$regex =  preg_match(self::HEADER_REGEX, $pgn, $matches);
 
-		return $matches;
+		return $matches[1];
 	}
 
 	private function deleteComments() {
@@ -110,30 +93,36 @@ class Game {
 		$this->moveText = str_replace($this->headerStr, '', self::PGN1);
 	}
 
+	private function createObjectHeaderArray() {
+		$headerElementsArray = explode(PHP_EOL, $this->headerStr);
+		$headerElementsArray = $this->removeEmptyArrayElements($headerElementsArray);
+		$headerElementsArray = $this->trimArrayElements($headerElementsArray);
+
+		if ($headerElementsArray) {
+			for ($i=0; $i < sizeof($headerElementsArray); $i++) { 
+				preg_match(self::HEADER_KEY_REGEX, $headerElementsArray[$i], $matchesKey);
+				preg_match(self::HEADER_VALUE_REGEX, $headerElementsArray[$i], $matchesValue);
+
+				$tag = new Tag($headerElementsArray[$i], $matchesKey[1], $matchesValue[1]);
+
+				$this->objectTagsArray[$matchesKey[1]] = $tag;
+			}
+		}
+	}
+
+	private function trimArrayElements($array) {
+		return array_map('trim', $array); 
+	}
+
+	private function removeEmptyArrayElements($array) {
+		return array_filter($array);
+	}
+
 	private function createSimpleMovesArray() {
 		$this->stringMovesArray = explode(' ', $this->moveText);
 	}
 
-	public function parsePgn(){
-		//$result = $this->extractTags(self::PGN1, '[', ']');
-		$header = $this->extractTagsRegex(self::PGN1);
-
-		if ($header) {
-			$this->headerStr = $header[0];
-			$this->extractMovesStr();
-			$this->clearMoveStr();
-			$this->createSimpleMovesArray();
-			$this->createObjectMovesArray();
-
-			var_dump($this->headerStr);
- 		}
- 		else
- 		{
- 			$this->header = NULL;
- 		}
-	}
-
-	public function createObjectMovesArray() {
+	private function createObjectMovesArray() {
 		if ($this->stringMovesArray) {
 			$moveCounter = 1;
 
@@ -154,6 +143,32 @@ class Game {
 				}
 			}
 		}
+	}
+
+	public function parsePgn(){
+		$header = $this->extractTagsRegex(self::PGN1);
+
+		if ($header) {
+			$this->headerStr = $header;
+			$this->createObjectHeaderArray();
+
+			$this->extractMovesStr();
+			$this->clearMoveStr();
+			$this->createSimpleMovesArray();
+			$this->createObjectMovesArray();
+ 		}
+ 		else
+ 		{
+ 			$this->headerStr = NULL;
+ 		}
+	}
+
+	public function getTagValueByName($tagKey) {
+		if (!isset($this->objectTagsArray[$tagKey])){
+			throw new \Exception("Non existent tag name", 1);
+		}
+
+		return $this->objectTagsArray[$tagKey]->getValue();
 	}
 
 	public function getMove($moveNumber, $color = 'W') {
