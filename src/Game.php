@@ -1,6 +1,9 @@
 <?php
 namespace PgnParser;
 
+
+use PgnParser\Move;
+
 class Game {
 	const TAGS = ['Event', 'Site', 'Date', 'Round', 'White', 'Black', 'Result', 'Annotator', 'PlyCount', 'TimeControl', 'Time', 'Termination', 'Mode', 'FEN'];
 
@@ -59,42 +62,43 @@ class Game {
     private $fen;
     private $tagsStr = '';
     private $moveStr = '';
-	private $moves = []; 
+	private $stringMovesArray = [];
+	private $objectMovesArray = []; 
 	private $tags = [];
 
-	public function extractTagsRegex($pgn) {
+	private function extractTagsRegex($pgn) {
 		$regex =  preg_match(self::HEADER_REGEX, $pgn, $matches);
 
 		return $matches;
 	}
 
-	public function deleteComments() {
+	private function deleteComments() {
 		$this->moveText = preg_replace(self::COMMENTS_REGEX, '', $this->moveText);
 	}
 
-	public function deleteMoveVariations() {
+	private function deleteMoveVariations() {
 		$this->moveText = preg_replace(self::MOVE_VARIATIONS_REGEX, '', $this->moveText);
 	}
 
-	public function deleteMoveNumber() {
+	private function deleteMoveNumber() {
 		$this->moveText = preg_replace(self::MOVE_NUMBER_REGEX, '', $this->moveText);	
 	}
 
-	public function deleteAnnotationGlyphs() {
+	private function deleteAnnotationGlyphs() {
 		$this->moveText = preg_replace(self::ANNOTATION_GLYPHS_REGEX, '', $this->moveText);	
 	}
 
-	public function deleteMultipleSpaces() {
+	private function deleteMultipleSpaces() {
 		$this->moveText = preg_replace(self::MULTIPLE_SPACES_REGEX, '', $this->moveText);	
 	}
 
-	public function trimMoveStr() {
+	private function trimMoveStr() {
 		$this->moveText = trim($this->moveText);
 
 		$this->moveText = preg_replace(self::MULTIPLE_SPACES_REGEX, ' ', $this->moveText);
 	}
 
-	public function clearMoveStr() {
+	private function clearMoveStr() {
 		$this->deleteComments();
 		$this->deleteMoveVariations();
 		$this->deleteMoveNumber();
@@ -102,12 +106,12 @@ class Game {
 		$this->trimMoveStr();
 	}
 
-	public function getMoveText() {
+	private function extractMovesStr() {
 		$this->moveText = str_replace($this->headerStr, '', self::PGN1);
 	}
 
-	public function splitMoveStr() {
-		$this->moves = explode(' ', $this->moveText);
+	private function createSimpleMovesArray() {
+		$this->stringMovesArray = explode(' ', $this->moveText);
 	}
 
 	public function parsePgn(){
@@ -116,9 +120,12 @@ class Game {
 
 		if ($header) {
 			$this->headerStr = $header[0];
-			$this->getMoveText();
+			$this->extractMovesStr();
 			$this->clearMoveStr();
-			$this->splitMoveStr();
+			$this->createSimpleMovesArray();
+			$this->createObjectMovesArray();
+
+			var_dump($this->headerStr);
  		}
  		else
  		{
@@ -126,7 +133,64 @@ class Game {
  		}
 	}
 
-	public function getMoves() {
-		return $this->moves;
+	public function createObjectMovesArray() {
+		if ($this->stringMovesArray) {
+			$moveCounter = 1;
+
+			for ($i = 0; $i < sizeof($this->stringMovesArray); $i++) {
+				//white
+				if ($i % 2 == 0) {
+					$move = new Move($this->stringMovesArray[$i], $moveCounter, 'W');
+
+					$this->objectMovesArray[$moveCounter][] = $move;	
+				}
+				//black
+				else
+				{
+					$move = new Move($this->stringMovesArray[$i], $moveCounter, 'B');
+					$this->objectMovesArray[$moveCounter][] = $move;
+
+					$moveCounter++;
+				}
+			}
+		}
+	}
+
+	public function getMove($moveNumber, $color = 'W') {
+		if ($color == 'W') {$index = 0;} else {$index = 1;}
+
+		if (!isset($this->objectMovesArray[$moveNumber])) {
+			throw new Exception("Non existent move number", 1);
+		}
+
+		return $this->objectMovesArray[$moveNumber][$index]->getMove();
+	}
+
+	public function getFirstMove($color = 'W') {
+		if ($color == 'W') {$index = 0;} else {$index = 1;}
+
+		if (!isset($this->objectMovesArray[1][$index])){
+			throw new \Exception("Non existent move number", 1);
+		}
+
+		return $this->objectMovesArray[1][$index]->getMove();
+	}
+
+	public function getLastMove($color = 'W') {
+		if ($color == 'W') {$index = 0;} else {$index = 1;}
+
+		if (!isset($this->objectMovesArray[sizeof($this->objectMovesArray)][$index])) {
+			throw new \Exception("Non existent move number", 1);
+		}
+
+		return $this->objectMovesArray[sizeof($this->objectMovesArray)][$index]->getMove();
+	}
+
+	public function getSimpleMovesArray() {
+		return $this->stringMovesArray;
+	}
+
+	public function getObjectMovesArray() {
+		return $this->objectMovesArray;
 	}
 }
