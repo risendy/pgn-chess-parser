@@ -1,11 +1,12 @@
 ## Table of contents
 * [General info](#general-info)
 * [Features](#features)
-* [Usage](#installation)
-* [Tests](#screenshots)
+* [Installation](#installation)
+* [Usage](#usage)
+* [Tests](#tests)
 
 ## General info
-Simple pgn chess notation parser.
+Simple pgn chess notation parser written in PHP.
 
 ## Features
 * extracting moves in string/array/object array formats
@@ -13,6 +14,11 @@ Simple pgn chess notation parser.
 * getting first/last move
 * extracting tags in string format
 * getting tags value by name
+
+## Installation
+```
+composer require risendy/pgn-parser
+```
 
 ## Usage
 To parse pgn string:
