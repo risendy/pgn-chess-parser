@@ -48,7 +48,7 @@ final class PgnParserTest extends TestCase
     {
         $this->game->parsePgn(self::PGN2);
         $movesString = $this->game->getMovesString();
-
+        
         $this->assertEquals(self::PGN2_move_text, $movesString);
     }
 
