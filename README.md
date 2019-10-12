@@ -6,7 +6,8 @@
 * [Tests](#tests)
 
 ## General info
-Simple pgn chess notation parser written in PHP.
+Simple pgn chess notation parser written in PHP. 
+PGN should be in string format, default tags delimiter is newline. There should be at least one blank line between tags and moves because it is used to process the pgn string.
 
 ## Features
 * extracting moves in string/array/object array formats

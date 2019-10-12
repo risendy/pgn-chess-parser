@@ -64,16 +64,24 @@ class Cleaner {
 	public function extractTagsRegex($pgn) {
 		$regex =  preg_match(self::HEADER_REGEX, $pgn, $matches);
 
+		if (!$matches) return false;
+
 		return $matches[1];
 	}
 
 	public function extractTagKey($tag) {
 		preg_match(self::HEADER_KEY_REGEX, $tag, $matchesKey);
+		
+		if (!$matchesKey) return false;
+
 		return $matchesKey[1];
 	}
 
 	public function extractTagValue($tag) {
 		preg_match(self::HEADER_VALUE_REGEX, $tag, $matchesValue);
+		
+		if (!$matchesValue) return false;
+
 		return $matchesValue[1];
 	}
 
