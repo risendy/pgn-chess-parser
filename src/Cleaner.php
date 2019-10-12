@@ -17,8 +17,9 @@ class Cleaner {
 
 	}
 
-	public function clearMoveStr($clearMoveStr) {
-		$clearMoveStr = $this->deleteComments($clearMoveStr);
+	public function clearMoveStr($clearMoveStr, $comments = false) {
+		if (!$comments) $clearMoveStr = $this->deleteComments($clearMoveStr);
+
 		$clearMoveStr = $this->deleteMoveVariations($clearMoveStr);
 		$clearMoveStr = $this->deleteMoveNumber($clearMoveStr);
 		$clearMoveStr = $this->deleteAnnotationGlyphs($clearMoveStr);
@@ -59,33 +60,5 @@ class Cleaner {
 		$moveText = trim($moveText);
 
 		return preg_replace(self::MULTIPLE_SPACES_REGEX, ' ', $moveText);
-	}
-
-	public function extractTagsRegex($pgn) {
-		$regex =  preg_match(self::HEADER_REGEX, $pgn, $matches);
-
-		if (!$matches) return false;
-
-		return $matches[1];
-	}
-
-	public function extractTagKey($tag) {
-		preg_match(self::HEADER_KEY_REGEX, $tag, $matchesKey);
-		
-		if (!$matchesKey) return false;
-
-		return $matchesKey[1];
-	}
-
-	public function extractTagValue($tag) {
-		preg_match(self::HEADER_VALUE_REGEX, $tag, $matchesValue);
-		
-		if (!$matchesValue) return false;
-
-		return $matchesValue[1];
-	}
-
-	public function extractMovesStr($headerStr, $pgn) {
-		return str_replace($headerStr, '', $pgn);
 	}
 }

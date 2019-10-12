@@ -18,7 +18,7 @@ final class PgnParserTest extends TestCase
 		[Result "0-1"]
 		[TimeControl "1/259200:0"]
 
-		1. e4 e6 2. d4 d5 0-1';
+		1. e4 e6 2. d4 {test} d5 0-1';
 
     const PGN2_move_text = 'e4 e6 d4 d5 0-1';
     const PGN2_header_text = '[Event "Lets Play!"]
@@ -31,6 +31,7 @@ final class PgnParserTest extends TestCase
 		[TimeControl "1/259200:0"]';
 
     const PGN2_move_2_white = 'd4';
+    const PGN2_move_2_white_comment = 'test';
     const PGN2_move_2_black = 'd5';
     const PGN2_tag_black_value = 'bmbio';
     const PGN2_first_move = 'e4';
@@ -65,7 +66,7 @@ final class PgnParserTest extends TestCase
         $this->game->parsePgn(self::PGN2);
         $move = $this->game->getMove(2, 'W');
 
-        $this->assertEquals(self::PGN2_move_2_white, $move);
+        $this->assertEquals(self::PGN2_move_2_white, $move->getSan());
     }
 
     public function testPgnGetMoveBlack(): void
@@ -73,7 +74,15 @@ final class PgnParserTest extends TestCase
         $this->game->parsePgn(self::PGN2);
         $move = $this->game->getMove(2, 'B');
 
-        $this->assertEquals(self::PGN2_move_2_black, $move);
+        $this->assertEquals(self::PGN2_move_2_black, $move->getSan());
+    }
+
+    public function testPgnGetMoveComment() :void
+    {
+        $this->game->parsePgn(self::PGN2);
+        $move = $this->game->getMove(2, 'W');
+
+        $this->assertEquals(self::PGN2_move_2_white_comment, $move->getComment());   
     }
 
     public function testPgnGetTagValueByName(): void

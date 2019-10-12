@@ -115,12 +115,34 @@ array(3) {
   }
 }
 ```
-To get specific move:
+To get specific move instance:
 ```
 $move = $game->getMove(2, 'B');
 
 result:
+object(PgnParser\Move)#75 (4) {
+["san":"PgnParser\Move":private]=>
 string(2) "d4"
+["moveNumber":"PgnParser\Move":private]=>
+int(2)
+["moveColor":"PgnParser\Move":private]=>
+string(1) "W"
+["comment":"PgnParser\Move":private]=>
+string(4) "test"
+```
+To get specific move san:
+```
+$move = $game->getMove(2, 'B')->getSan();
+
+result:
+string(2) "d5"
+```
+To get specific move comment:
+```
+$move = $game->getMove(2, 'B')->getComment();
+
+result:
+string(4) "test"
 ```
 To get tag value by name:
 ```

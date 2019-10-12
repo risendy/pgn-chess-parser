@@ -5,6 +5,7 @@ namespace PgnParser;
 use PgnParser\Move;
 use PgnParser\Tag;
 use PgnParser\Cleaner;
+use PgnParser\Extractor;
 
 class Game {
 	private $stringMovesArray = [];
@@ -12,22 +13,26 @@ class Game {
 	private $objectTagsArray = [];
 	private $headerStr = '';
 	private $moveText = '';
+	private $moveTextWithComments = '';
 
 	function __construct() {
 		$this->cleaner = new Cleaner();
+		$this->extractor = new Extractor();
 	}
 
 	public function parsePgn($pgn){
 	    $this->pgn = $pgn;
 
-		$this->headerStr = $this->cleaner->extractTagsRegex($pgn);
+		$this->headerStr = $this->extractor->extractTagsRegex($pgn);
 
 		if ($this->headerStr) {
 			$this->createObjectHeaderArray();
 
-			$extractedMoveText = $this->cleaner->extractMovesStr($this->headerStr, $this->pgn);
+			$extractedMoveText = $this->extractor->extractMovesStr($this->headerStr, $this->pgn);
 
 			$this->moveText = $this->cleaner->clearMoveStr($extractedMoveText);
+			$this->moveTextWithComments = $this->cleaner->clearMoveStr($extractedMoveText, $comments = true);
+			
 			$this->createSimpleMovesArray();
 			$this->createObjectMovesArray();
  		}
@@ -40,8 +45,8 @@ class Game {
 
 		if ($headerElementsArray) {
 			for ($i=0; $i < sizeof($headerElementsArray); $i++) { 
-				$tagKey = $this->cleaner->extractTagKey($headerElementsArray[$i]);
-				$tagValue = $this->cleaner->extractTagValue($headerElementsArray[$i]);
+				$tagKey = $this->extractor->extractTagKey($headerElementsArray[$i]);
+				$tagValue = $this->extractor->extractTagValue($headerElementsArray[$i]);
 
 				$tag = new Tag($headerElementsArray[$i], $tagKey, $tagValue);
 
@@ -55,20 +60,31 @@ class Game {
 	}
 
 	private function createObjectMovesArray() {
-		if ($this->stringMovesArray) {
+		$stringMovesWithComment = explode(' ', $this->moveTextWithComments); 
+
+		if ($stringMovesWithComment) {
 			$moveCounter = 1;
 
-			for ($i = 0; $i < sizeof($this->stringMovesArray); $i++) {
+			for ($i = 0; $i < sizeof($stringMovesWithComment); $i++) {
+				$comment = false;
+				$isComment = $this->extractor->extractComment($stringMovesWithComment[$i]);
+
+				if ($isComment) continue;
+
+				if (isset($stringMovesWithComment[$i+1])){
+					$comment = $this->extractor->extractComment($stringMovesWithComment[$i+1]);	
+				}
+
 				//white
 				if ($i % 2 == 0) {
-					$move = new Move($this->stringMovesArray[$i], $moveCounter, 'W');
+					$move = new Move($stringMovesWithComment[$i], $moveCounter, $comment, 'W');
 
 					$this->objectMovesArray[$moveCounter][] = $move;	
 				}
 				//black
 				else
 				{
-					$move = new Move($this->stringMovesArray[$i], $moveCounter, 'B');
+					$move = new Move($stringMovesWithComment[$i], $moveCounter, $comment, 'B');
 					$this->objectMovesArray[$moveCounter][] = $move;
 
 					$moveCounter++;
@@ -92,7 +108,7 @@ class Game {
 			throw new Exception("Non existent move number", 1);
 		}
 
-		return $this->objectMovesArray[$moveNumber][$index]->getMove();
+		return $this->objectMovesArray[$moveNumber][$index];
 	}
 
 	public function getFirstMove($color = 'W') {
@@ -102,7 +118,7 @@ class Game {
 			throw new \Exception("Non existent move number", 1);
 		}
 
-		return $this->objectMovesArray[1][$index]->getMove();
+		return $this->objectMovesArray[1][$index]->getSan();
 	}
 
 	public function getLastMove($color = 'W') {
@@ -112,7 +128,7 @@ class Game {
 			throw new \Exception("Non existent move number", 1);
 		}
 
-		return $this->objectMovesArray[sizeof($this->objectMovesArray)][$index]->getMove();
+		return $this->objectMovesArray[sizeof($this->objectMovesArray)][$index]->getSan();
 	}
 
 	public function getSimpleMovesArray() {

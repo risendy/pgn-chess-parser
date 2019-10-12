@@ -3,17 +3,23 @@ namespace PgnParser;
 
 
 class Move {
-	private $move;
+	private $san;
 	private $moveNumber;
 	private $moveColor;
+	private $comment;
 
-	function __construct($move, $moveNumber, $moveColor) {
-		$this->move = $move;
+	function __construct($san, $moveNumber, $comment, $moveColor) {
+		$this->san = $san;
 		$this->moveNumber = $moveNumber;
+		$this->comment = $comment;
 		$this->moveColor = $moveColor;
 	}
 
-	public function getMove() {
-		return $this->move;
+	public function getSan() {
+		return $this->san;
+	}
+
+	public function getComment() {
+		return $this->comment;
 	}
 }
