@@ -4,92 +4,50 @@ namespace PgnParser;
 
 use PgnParser\Move;
 use PgnParser\Tag;
+use PgnParser\Cleaner;
 
 class Game {
-	const TAGS = ['Event', 'Site', 'Date', 'Round', 'White', 'Black', 'Result', 'Annotator', 'PlyCount', 'TimeControl', 'Time', 'Termination', 'Mode', 'FEN'];
-
-	const HEADER_REGEX = '/^(\[((?:\r?\n)|.)*\])(?:\r?\n){2}/';
-	const HEADER_KEY_REGEX = '/^\[([A-Z][A-Za-z]*)\s.*\]$/';
-	const HEADER_VALUE_REGEX = '/^\[[A-Za-z]+\s"(.*)"\]$/';
-	const COMMENTS_REGEX = '/(\{[^}]+\})+?/';
-	const MOVE_VARIATIONS_REGEX = '/(\([^\(\)]+\))+?/';
-	const MOVE_NUMBER_REGEX = '/\d+\.(\.\.)?/';
-	const MOVE_INDICATOR_REGEX = '/\.\.\./';
-	const ANNOTATION_GLYPHS_REGEX = '/\$\d+/';
-	const MULTIPLE_SPACES_REGEX = '/\s+/';
-
 	private $stringMovesArray = [];
 	private $objectMovesArray = []; 
 	private $objectTagsArray = [];
 	private $headerStr = '';
+	private $moveText = '';
 
-	private function extractTagsRegex($pgn) {
-		$regex =  preg_match(self::HEADER_REGEX, $pgn, $matches);
-
-		return $matches[1];
+	function __construct() {
+		$this->cleaner = new Cleaner();
 	}
 
-	private function deleteComments() {
-		$this->moveText = preg_replace(self::COMMENTS_REGEX, '', $this->moveText);
-	}
+	public function parsePgn($pgn){
+	    $this->pgn = $pgn;
 
-	private function deleteMoveVariations() {
-		$this->moveText = preg_replace(self::MOVE_VARIATIONS_REGEX, '', $this->moveText);
-	}
+		$this->headerStr = $this->cleaner->extractTagsRegex($pgn);
 
-	private function deleteMoveNumber() {
-		$this->moveText = preg_replace(self::MOVE_NUMBER_REGEX, '', $this->moveText);	
-	}
+		if ($this->headerStr) {
+			$this->createObjectHeaderArray();
 
-	private function deleteAnnotationGlyphs() {
-		$this->moveText = preg_replace(self::ANNOTATION_GLYPHS_REGEX, '', $this->moveText);	
-	}
+			$extractedMoveText = $this->cleaner->extractMovesStr($this->headerStr, $this->pgn);
 
-	private function deleteMultipleSpaces() {
-		$this->moveText = preg_replace(self::MULTIPLE_SPACES_REGEX, '', $this->moveText);	
-	}
-
-	private function trimMoveStr() {
-		$this->moveText = trim($this->moveText);
-
-		$this->moveText = preg_replace(self::MULTIPLE_SPACES_REGEX, ' ', $this->moveText);
-	}
-
-	private function clearMoveStr() {
-		$this->deleteComments();
-		$this->deleteMoveVariations();
-		$this->deleteMoveNumber();
-		$this->deleteAnnotationGlyphs();
-		$this->trimMoveStr();
-	}
-
-	private function extractMovesStr() {
-		$this->moveText = str_replace($this->headerStr, '', $this->pgn);
+			$this->moveText = $this->cleaner->clearMoveStr($extractedMoveText);
+			$this->createSimpleMovesArray();
+			$this->createObjectMovesArray();
+ 		}
 	}
 
 	private function createObjectHeaderArray() {
 		$headerElementsArray = explode(PHP_EOL, $this->headerStr);
-		$headerElementsArray = $this->removeEmptyArrayElements($headerElementsArray);
-		$headerElementsArray = $this->trimArrayElements($headerElementsArray);
+		$headerElementsArray = $this->cleaner->removeEmptyArrayElements($headerElementsArray);
+		$headerElementsArray = $this->cleaner->trimArrayElements($headerElementsArray);
 
 		if ($headerElementsArray) {
 			for ($i=0; $i < sizeof($headerElementsArray); $i++) { 
-				preg_match(self::HEADER_KEY_REGEX, $headerElementsArray[$i], $matchesKey);
-				preg_match(self::HEADER_VALUE_REGEX, $headerElementsArray[$i], $matchesValue);
+				$tagKey = $this->cleaner->extractTagKey($headerElementsArray[$i]);
+				$tagValue = $this->cleaner->extractTagValue($headerElementsArray[$i]);
 
-				$tag = new Tag($headerElementsArray[$i], $matchesKey[1], $matchesValue[1]);
+				$tag = new Tag($headerElementsArray[$i], $tagKey, $tagValue);
 
-				$this->objectTagsArray[$matchesKey[1]] = $tag;
+				$this->objectTagsArray[$tagKey] = $tag;
 			}
 		}
-	}
-
-	private function trimArrayElements($array) {
-		return array_map('trim', $array); 
-	}
-
-	private function removeEmptyArrayElements($array) {
-		return array_filter($array);
 	}
 
 	private function createSimpleMovesArray() {
@@ -117,26 +75,6 @@ class Game {
 				}
 			}
 		}
-	}
-
-	public function parsePgn($pgn){
-	    $this->pgn = $pgn;
-
-		$header = $this->extractTagsRegex($pgn);
-
-		if ($header) {
-			$this->headerStr = $header;
-			$this->createObjectHeaderArray();
-
-			$this->extractMovesStr();
-			$this->clearMoveStr();
-			$this->createSimpleMovesArray();
-			$this->createObjectMovesArray();
- 		}
- 		else
- 		{
- 			$this->headerStr = NULL;
- 		}
 	}
 
 	public function getTagValueByName($tagKey) {
