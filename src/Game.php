@@ -14,6 +14,7 @@ class Game {
 	private $headerStr = '';
 	private $moveText = '';
 	private $moveTextWithComments = '';
+	private $gameResult;
 
 	function __construct() {
 		$this->cleaner = new Cleaner();
@@ -64,22 +65,37 @@ class Game {
 
 		if ($stringMovesWithComment) {
 			$moveCounter = 1;
+			$lastColor = 'B';
 
 			for ($i = 0; $i < sizeof($stringMovesWithComment); $i++) {
 				$comment = false;
-				$isComment = $this->extractor->extractComment($stringMovesWithComment[$i]);
+                $currentMove = $stringMovesWithComment[$i];
 
-				if ($isComment) continue;
+                if ($i == sizeof($stringMovesWithComment) - 1) {
+                    $gameResult = Move::staticCheckIfGameResult($currentMove);
 
-				if (isset($stringMovesWithComment[$i+1])){
-					$comment = $this->extractor->extractComment($stringMovesWithComment[$i+1]);	
-				}
+                    if ($gameResult) {
+                        $this->setGameResult($gameResult);
+                    }
+                }
+
+                if (isset($stringMovesWithComment[$i+1])){
+                    $nextMove = $stringMovesWithComment[$i+1];
+                    $comment = $this->extractor->extractComment($nextMove);
+                }
+
+				$isComment = $this->extractor->extractComment($currentMove);
+
+				if ($isComment) {
+				    continue;
+                }
 
 				//white
-				if ($i % 2 == 0) {
+				if ($lastColor == 'B') {
 					$move = new Move($stringMovesWithComment[$i], $moveCounter, $comment, 'W');
 
-					$this->objectMovesArray[$moveCounter][] = $move;	
+					$this->objectMovesArray[$moveCounter][] = $move;
+					$lastColor = 'W';
 				}
 				//black
 				else
@@ -87,11 +103,33 @@ class Game {
 					$move = new Move($stringMovesWithComment[$i], $moveCounter, $comment, 'B');
 					$this->objectMovesArray[$moveCounter][] = $move;
 
+                    $lastColor = 'B';
 					$moveCounter++;
 				}
 			}
 		}
 	}
+
+    public function createJsonArray() {
+        $jsonArray = [];
+
+        foreach ($this->objectTagsArray as $tag) {
+            $jsonArray['tags'][$tag->getKey()] = $tag->getValue();
+        }
+
+        foreach ($this->objectMovesArray as $move) {
+            if ((isset($move[0])) ? $moveWhite = $move[0]->getSan() : $moveWhite = NULL);
+            if ((isset($move[1])) ? $moveBlack = $move[1]->getSan() : $moveBlack = NULL);
+
+            $jsonArray['moves'][] = [
+                'moveNumber' => $move[0]->getMoveNumber(),
+                'white' => $moveWhite,
+                'black' => $moveBlack,
+            ];
+        }
+
+        return json_encode($jsonArray);
+    }
 
 	public function getTagValueByName($tagKey) {
 		if (!isset($this->objectTagsArray[$tagKey])){
@@ -145,5 +183,21 @@ class Game {
 
     public function getHeaderString() {
         return $this->headerStr;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getGameResult()
+    {
+        return $this->gameResult;
+    }
+
+    /**
+     * @param mixed $gameResult
+     */
+    public function setGameResult($gameResult)
+    {
+        $this->gameResult = $gameResult;
     }
 }

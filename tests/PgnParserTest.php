@@ -20,6 +20,19 @@ final class PgnParserTest extends TestCase
 
 		1. e4 e6 2. d4 {test} d5 0-1';
 
+    const PGN3 = '[Event "Lets Play!"]
+		[Site "Chess.com"]
+		[Date "2018.12.04"]
+		[Round "?"]
+		[White "guilherme_1910"]
+		[Black "bmbio"]
+		[Result "0-1"]
+		[TimeControl "1/259200:0"]
+
+		1. e4 e6 2. d4';
+
+    const PGN3_json = '{"tags":{"Event":"Lets Play!","Site":"Chess.com","Date":"2018.12.04","Round":"?","White":"guilherme_1910","Black":"bmbio","Result":"0-1","TimeControl":"1\/259200:0"},"moves":[{"moveNumber":1,"white":"e4","black":"e6"},{"moveNumber":2,"white":"d4","black":null}]}';
+
     const PGN2_move_text = 'e4 e6 d4 d5 0-1';
     const PGN2_header_text = '[Event "Lets Play!"]
 		[Site "Chess.com"]
@@ -99,6 +112,14 @@ final class PgnParserTest extends TestCase
         $firstMove = $this->game->getFirstMove();
 
         $this->assertEquals(self::PGN2_first_move, $firstMove);
+    }
+
+    public function testPgnJsonArray(): void
+    {
+        $this->game->parsePgn(self::PGN3);
+        $jsonArray = $this->game->createJsonArray();
+
+        $this->assertEquals(self::PGN3_json, $jsonArray);
     }
 
 }

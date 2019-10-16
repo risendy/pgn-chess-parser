@@ -10,8 +10,9 @@ Simple pgn chess notation parser written in PHP.
 PGN should be in string format, default tags delimiter is newline. There should be at least one blank line between tags and moves because it is used to process the pgn string.
 
 ## Features
-* extracting moves in string/array/object array formats
+* extracting moves in string/json/array/object array formats
 * getting specific moves (black or white)
+* getting specific move comment
 * getting first/last move
 * extracting tags in string format
 * getting tags value by name
@@ -33,6 +34,37 @@ $moves = $game->getMovesString();
 
 result:
 string(15) "e4 e6 d4 d5 0-1"
+```
+
+To get moves in json format:
+```
+$json = $game->createJsonArray();
+
+result:
+{
+   "tags":{
+      "Event":"Lets Play!",
+      "Site":"Chess.com",
+      "Date":"2018.12.04",
+      "Round":"?",
+      "White":"guilherme_1910",
+      "Black":"bmbio",
+      "Result":"0-1",
+      "TimeControl":"1\/259200:0"
+   },
+   "moves":[
+      {
+         "moveNumber":1,
+         "white":"e4",
+         "black":"e6"
+      },
+      {
+         "moveNumber":2,
+         "white":"d4",
+         "black":null
+      }
+   ]
+}
 ```
 
 To get moves in array format:
